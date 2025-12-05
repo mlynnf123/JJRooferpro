@@ -80,16 +80,57 @@ export const JobDetail: React.FC<JobDetailProps> = ({ jobs, onUpdateJob }) => {
   };
 
   const handleUpdateSupplement = (suppId: string, field: keyof Supplement, value: any) => {
+    if (!job || !financials) return;
+
     const updatedSupplements = (job.supplements || []).map(s => 
       s.id === suppId ? { ...s, [field]: value } : s
     );
-    setJob({ ...job, supplements: updatedSupplements });
+
+    // Automation: Calculate new total approved supplements
+    const totalApproved = updatedSupplements.reduce((sum, s) => {
+        return s.status === 'Approved' ? sum + (s.amountApproved || 0) : sum;
+    }, 0);
+
+    // Create new financials object with updated supplements total
+    const updatedFinancialsInput = {
+      ...financials,
+      insurance: {
+        ...financials.insurance,
+        supplementsTotal: totalApproved
+      }
+    };
+
+    // Recalculate profitability
+    const recalculatedFinancials = calculateProfitability(updatedFinancialsInput);
+
+    // Update both states
+    setFinancials(recalculatedFinancials);
+    setJob({ ...job, supplements: updatedSupplements, financials: recalculatedFinancials });
   };
 
   const handleDeleteSupplement = (suppId: string) => {
+    if (!job || !financials) return;
+
     if (confirm('Are you sure you want to delete this supplement?')) {
       const updatedSupplements = (job.supplements || []).filter(s => s.id !== suppId);
-      setJob({ ...job, supplements: updatedSupplements });
+      
+      // Automation: Recalculate total approved after deletion
+      const totalApproved = updatedSupplements.reduce((sum, s) => {
+        return s.status === 'Approved' ? sum + (s.amountApproved || 0) : sum;
+      }, 0);
+
+      const updatedFinancialsInput = {
+        ...financials,
+        insurance: {
+          ...financials.insurance,
+          supplementsTotal: totalApproved
+        }
+      };
+
+      const recalculatedFinancials = calculateProfitability(updatedFinancialsInput);
+
+      setFinancials(recalculatedFinancials);
+      setJob({ ...job, supplements: updatedSupplements, financials: recalculatedFinancials });
     }
   };
 
@@ -358,11 +399,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({ jobs, onUpdateJob }) => {
                 <label className="block text-xs font-medium text-slate-500 uppercase">Supplements Approved</label>
                 <input 
                   type="number" 
+                  readOnly
                   value={financials.insurance.supplementsTotal}
-                  onChange={(e) => handleFinancialChange('insurance', 'supplementsTotal', e.target.value)}
-                  className="w-full mt-1 p-2 border rounded font-mono text-right text-emerald-600 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
-                  onFocus={(e) => e.target.select()}
+                  className="w-full mt-1 p-2 border rounded font-mono text-right text-emerald-600 font-bold bg-slate-50 cursor-not-allowed outline-none"
                 />
+                <p className="text-[10px] text-slate-400 mt-0.5 text-right">Auto-calculated from Supplements tab</p>
               </div>
               <div className="pt-4 border-t">
                  <div className="flex justify-between font-bold">
@@ -574,11 +615,11 @@ export const JobDetail: React.FC<JobDetailProps> = ({ jobs, onUpdateJob }) => {
               </table>
             </div>
           </div>
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-start space-x-3 text-sm text-blue-800">
-            <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-lg flex items-start space-x-3 text-sm text-emerald-800">
+            <Check size={20} className="flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Pro Tip:</p>
-              <p>Once supplements are marked as <strong>Approved</strong>, remember to update the <strong>Supplements Approved</strong> field in the Financials tab to reflect the correct revenue potential.</p>
+              <p className="font-bold">Automated Financials</p>
+              <p>Great! When you mark a supplement as <strong>Approved</strong>, the system automatically updates your Revenue and Profitability metrics in the Financials tab.</p>
             </div>
           </div>
         </div>

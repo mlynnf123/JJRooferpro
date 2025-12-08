@@ -90,6 +90,10 @@ export interface Job {
     installDate?: string;
     completionDate?: string;
   };
+  // Contract integration
+  leadId?: string;
+  contractId?: string;
+  contractStatus?: 'none' | 'draft' | 'sent' | 'signed' | 'completed';
 }
 
 export interface StatCardProps {
@@ -98,4 +102,93 @@ export interface StatCardProps {
   icon: React.ReactNode;
   trend?: string;
   trendColor?: 'green' | 'red' | 'neutral';
+}
+
+// Contract and Lead related types
+export interface Signature {
+  id: string;
+  dataURL: string;
+  timestamp: string;
+  signerName: string;
+  signerRole: 'customer' | 'company';
+}
+
+export interface ContractLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  category: 'roofing' | 'gutter' | 'window' | 'other';
+}
+
+export interface ContractDetails {
+  customerName: string;
+  customerAddress: string;
+  customerPhone: string;
+  customerEmail: string;
+  companyRepName: string;
+  companyRepTitle: string;
+  projectDescription: string;
+  workLocation: string;
+  startDate: string;
+  completionDate: string;
+  totalAmount: number;
+  paymentSchedule: {
+    depositAmount: number;
+    progressPayments: { description: string; amount: number }[];
+    finalPayment: number;
+  };
+  terms: string;
+  warrantyInfo: string;
+  thirdPartyAuth?: {
+    authorizedBy: string;
+    relationship: string;
+    authSignature?: string;
+  };
+}
+
+export interface Contract {
+  id: string;
+  leadId?: string;
+  jobId?: string;
+  details: ContractDetails;
+  lineItems: ContractLineItem[];
+  signatures: {
+    company?: Signature;
+    customer1?: Signature;
+    customer2?: Signature;
+    customer3?: Signature;
+    customer4?: Signature;
+  };
+  status: 'draft' | 'sent' | 'signed' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+}
+
+export type LeadStatus = 'new' | 'contacted' | 'quoted' | 'converted' | 'lost';
+
+export interface Lead {
+  id: string;
+  customerInfo: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    preferredContact: 'phone' | 'email' | 'text';
+  };
+  source: 'referral' | 'online' | 'advertisement' | 'cold-call' | 'other';
+  status: LeadStatus;
+  priority: 'low' | 'medium' | 'high';
+  estimatedValue: number;
+  description: string;
+  notes: string;
+  assignedTo?: string;
+  contractId?: string;
+  convertedJobId?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastContactDate?: string;
+  nextFollowUp?: string;
 }

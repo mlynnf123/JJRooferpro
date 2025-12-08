@@ -8,7 +8,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Users
 } from 'lucide-react';
 
 const TopNavItem = ({ to, icon, label }: { to: string, icon: React.ReactNode, label: string }) => (
@@ -48,6 +49,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1 ml-6">
               <TopNavItem to="/" icon={<LayoutDashboard size={18} />} label="Dashboard" />
+              <TopNavItem to="/leads" icon={<Users size={18} />} label="Leads" />
               <TopNavItem to="/jobs" icon={<Briefcase size={18} />} label="Jobs Board" />
               <TopNavItem to="/reports" icon={<TrendingUp size={18} />} label="Reports" />
               <TopNavItem to="/documents" icon={<FileText size={18} />} label="Documents" />
@@ -80,6 +82,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="md:hidden bg-slate-800 border-t border-slate-700">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                <TopNavItem to="/" icon={<LayoutDashboard size={18} />} label="Dashboard" />
+               <TopNavItem to="/leads" icon={<Users size={18} />} label="Leads" />
                <TopNavItem to="/jobs" icon={<Briefcase size={18} />} label="Jobs Board" />
                <TopNavItem to="/reports" icon={<TrendingUp size={18} />} label="Financial Reports" />
                <TopNavItem to="/documents" icon={<FileText size={18} />} label="Documents" />

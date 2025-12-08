@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Job, PHASE_NAMES } from '../types';
+import { Job, PHASE_NAMES, Contract } from '../types';
 import { getPhaseColor, formatCurrency } from '../utils';
-import { Search, Filter, ChevronRight, AlertCircle, Plus } from 'lucide-react';
+import { Search, Filter, ChevronRight, AlertCircle, Plus, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface JobsProps {
   jobs: Job[];
+  contracts?: Contract[];
   onAddJob: () => string;
 }
 
-export const Jobs: React.FC<JobsProps> = ({ jobs, onAddJob }) => {
+export const Jobs: React.FC<JobsProps> = ({ jobs, contracts = [], onAddJob }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [phaseFilter, setPhaseFilter] = useState<string>('all');
@@ -24,6 +25,23 @@ export const Jobs: React.FC<JobsProps> = ({ jobs, onAddJob }) => {
   const handleCreateJob = () => {
     const newId = onAddJob();
     navigate(`/jobs/${newId}`);
+  };
+
+  const getJobContract = (job: Job) => {
+    if (job.contractId) {
+      return contracts.find(c => c.id === job.contractId);
+    }
+    return undefined;
+  };
+
+  const getContractStatusColor = (status?: string) => {
+    switch (status) {
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'signed': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-slate-100 text-slate-800';
+      default: return 'bg-slate-100 text-slate-500';
+    }
   };
 
   return (
@@ -75,46 +93,72 @@ export const Jobs: React.FC<JobsProps> = ({ jobs, onAddJob }) => {
                 <tr>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Job Details</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Phase</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contract</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Financials</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rep</th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/jobs/${job.id}`)}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        {job.phaseTracking.isStuck && (
-                          <AlertCircle size={16} className="text-red-500 mr-2" title="Stuck > 7 Days" />
-                        )}
-                        <div>
-                          <div className="font-bold text-slate-900">{job.client.name}</div>
-                          <div className="text-sm text-slate-500">{job.address || 'No Address Listed'}</div>
-                          <div className="text-xs text-slate-400 mt-1">{job.jobNumber} • {job.client.carrier || 'Unknown Carrier'}</div>
+                {filteredJobs.map((job) => {
+                  const contract = getJobContract(job);
+                  return (
+                    <tr key={job.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/jobs/${job.id}`)}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {job.phaseTracking.isStuck && (
+                            <AlertCircle size={16} className="text-red-500 mr-2" title="Stuck > 7 Days" />
+                          )}
+                          <div>
+                            <div className="font-bold text-slate-900">{job.client.name}</div>
+                            <div className="text-sm text-slate-500">{job.client.address || 'No Address Listed'}</div>
+                            <div className="text-xs text-slate-400 mt-1">{job.jobNumber} • {job.client.carrier || 'Unknown Carrier'}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPhaseColor(job.phaseTracking.currentPhase)}`}>
-                        Phase {job.phaseTracking.currentPhase}: {PHASE_NAMES[job.phaseTracking.currentPhase]}
-                      </span>
-                      <div className="text-xs text-slate-400 mt-1">{job.phaseTracking.daysInPhase} days in phase</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{formatCurrency(job.financials.insurance.rcvTotal)}</div>
-                      <div className={`text-xs font-medium ${job.financials.profitability.grossMargin > 35 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {job.financials.profitability.grossMargin.toFixed(1)}% Margin
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-900">{job.salesRep.name || 'Unassigned'}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <ChevronRight className="text-slate-400" size={20} />
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPhaseColor(job.phaseTracking.currentPhase)}`}>
+                          Phase {job.phaseTracking.currentPhase}: {PHASE_NAMES[job.phaseTracking.currentPhase]}
+                        </span>
+                        <div className="text-xs text-slate-400 mt-1">{job.phaseTracking.daysInPhase} days in phase</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {contract ? (
+                          <div className="flex items-center space-x-2">
+                            <FileText size={16} className="text-blue-600" />
+                            <div>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getContractStatusColor(contract.status)}`}>
+                                {contract.status}
+                              </span>
+                              <div className="text-xs text-slate-500 mt-1">{formatCurrency(contract.details.totalAmount)}</div>
+                            </div>
+                          </div>
+                        ) : job.leadId ? (
+                          <div className="text-xs text-slate-500">
+                            <div>From Lead</div>
+                            <div className="text-slate-400">No Contract</div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-400">
+                            Direct Job
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-slate-900">{formatCurrency(job.financials.insurance.rcvTotal)}</div>
+                        <div className={`text-xs font-medium ${job.financials.profitability.grossMargin > 35 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {job.financials.profitability.grossMargin.toFixed(1)}% Margin
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-slate-900">{job.salesRep.name || 'Unassigned'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <ChevronRight className="text-slate-400" size={20} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

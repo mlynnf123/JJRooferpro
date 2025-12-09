@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -6,13 +6,44 @@ import { Jobs } from './components/Jobs';
 import { JobDetail } from './components/JobDetail';
 import { FinancialReports } from './components/FinancialReports';
 import { Leads } from './components/Leads';
-import { MOCK_JOBS, MOCK_LEADS, MOCK_CONTRACTS } from './mockData';
+import { MOCK_JOBS } from './mockData';
 import { Job, Lead, Contract } from './types';
+import { leadOperations, contractOperations, testDatabaseConnection } from './lib/database';
 
 function App() {
   const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
-  const [contracts, setContracts] = useState<Contract[]>(MOCK_CONTRACTS);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dbConnected, setDbConnected] = useState(false);
+
+  // Initialize database connection and load data
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Test database connection
+        const connected = await testDatabaseConnection();
+        setDbConnected(connected);
+
+        if (connected) {
+          // Load leads and contracts from database
+          const [leadsData, contractsData] = await Promise.all([
+            leadOperations.getAll(),
+            contractOperations.getAll(),
+          ]);
+          
+          setLeads(leadsData);
+          setContracts(contractsData);
+        }
+      } catch (error) {
+        setDbConnected(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   const updateJob = (updatedJob: Job) => {
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
@@ -56,40 +87,57 @@ function App() {
   };
 
   // Lead management functions
-  const addLead = () => {
-    const newLead: Lead = {
-      id: crypto.randomUUID(),
-      customerInfo: {
-        name: 'New Customer',
-        address: '',
-        phone: '',
-        email: '',
-        preferredContact: 'phone'
-      },
-      source: 'other',
-      status: 'new',
-      priority: 'medium',
-      estimatedValue: 0,
-      description: '',
-      notes: '',
-      assignedTo: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setLeads(prev => [newLead, ...prev]);
+  const addLead = async (lead: Lead) => {
+    try {
+      if (dbConnected) {
+        const savedLead = await leadOperations.create(lead);
+        setLeads(prev => [savedLead, ...prev]);
+      } else {
+        setLeads(prev => [lead, ...prev]);
+      }
+    } catch (error) {
+      setLeads(prev => [lead, ...prev]);
+    }
   };
 
-  const updateLead = (updatedLead: Lead) => {
-    setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+  const updateLead = async (updatedLead: Lead) => {
+    try {
+      if (dbConnected) {
+        const savedLead = await leadOperations.update(updatedLead.id, updatedLead);
+        setLeads(prev => prev.map(l => l.id === updatedLead.id ? savedLead : l));
+      } else {
+        setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+      }
+    } catch (error) {
+      setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+    }
   };
 
   // Contract management functions
-  const createContract = (contract: Contract) => {
-    setContracts(prev => [contract, ...prev]);
+  const createContract = async (contract: Contract) => {
+    try {
+      if (dbConnected) {
+        const savedContract = await contractOperations.create(contract);
+        setContracts(prev => [savedContract, ...prev]);
+      } else {
+        setContracts(prev => [contract, ...prev]);
+      }
+    } catch (error) {
+      setContracts(prev => [contract, ...prev]);
+    }
   };
 
-  const updateContract = (updatedContract: Contract) => {
-    setContracts(prev => prev.map(c => c.id === updatedContract.id ? updatedContract : c));
+  const updateContract = async (updatedContract: Contract) => {
+    try {
+      if (dbConnected) {
+        const savedContract = await contractOperations.update(updatedContract.id, updatedContract);
+        setContracts(prev => prev.map(c => c.id === updatedContract.id ? savedContract : c));
+      } else {
+        setContracts(prev => prev.map(c => c.id === updatedContract.id ? updatedContract : c));
+      }
+    } catch (error) {
+      setContracts(prev => prev.map(c => c.id === updatedContract.id ? updatedContract : c));
+    }
   };
 
   // Convert lead to job
@@ -166,6 +214,15 @@ function App() {
     
     return newJob.id;
   };
+
+  // Show loading spinner while initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <HashRouter>

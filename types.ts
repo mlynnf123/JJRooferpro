@@ -141,10 +141,36 @@ export interface ContractDetails {
   };
   terms: string;
   warrantyInfo: string;
+  worksheetData?: {
+    deductible: number;
+    nonRecoverableDepreciation: number;
+    upgrades: string;
+    discounts: number;
+    workNotDoing: string;
+    remainingBalance: number;
+  };
+  reviewData?: {
+    shingleType: string;
+    existingDamage: string;
+    liabilityDisclosures: {
+      constructionCaution: boolean;
+      drivewayUsage: boolean;
+      puncturedLines: boolean;
+      termsReverse: boolean;
+      propertyCode: boolean;
+    };
+  };
   thirdPartyAuth?: {
-    authorizedBy: string;
-    relationship: string;
-    authSignature?: string;
+    homeownerName: string;
+    propertyAddress: string;
+    insuranceCompany: string;
+    claimNumber: string;
+    authorizations: {
+      requestInspections: boolean;
+      discussSupplements: boolean;
+      issuedPayment: boolean;
+      requestClaimStatus: boolean;
+    };
   };
 }
 

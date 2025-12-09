@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Lead, LeadStatus, Contract } from '../types';
-import { Search, Filter, Plus, User, Phone, Mail, ArrowUpRight, FileText, CheckCircle } from 'lucide-react';
+import { Search, Filter, Plus, User, Phone, Mail, ArrowUpRight, FileText, CheckCircle, Edit } from 'lucide-react';
 import { ContractModal } from './ContractModal';
 import { PrintableContract } from './PrintableContract';
+import { LeadModal } from './LeadModal';
 
 interface LeadsProps {
   leads: Lead[];
   contracts: Contract[];
-  onAddLead: () => void;
+  onAddLead: (lead: Lead) => void;
   onUpdateLead: (lead: Lead) => void;
   onCreateContract: (contract: Contract) => void;
   onUpdateContract: (contract: Contract) => void;
@@ -26,6 +27,12 @@ export const Leads: React.FC<LeadsProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [leadModal, setLeadModal] = useState<{
+    isOpen: boolean;
+    lead?: Lead;
+  }>({
+    isOpen: false
+  });
   const [contractModal, setContractModal] = useState<{
     isOpen: boolean;
     leadId?: string;
@@ -128,6 +135,22 @@ export const Leads: React.FC<LeadsProps> = ({
     }
   };
 
+  const handleCreateNewLead = () => {
+    setLeadModal({ isOpen: true });
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    setLeadModal({ isOpen: true, lead });
+  };
+
+  const handleSaveLead = (lead: Lead) => {
+    if (leadModal.lead) {
+      onUpdateLead(lead);
+    } else {
+      onAddLead(lead);
+    }
+  };
+
   const handleUpdateStatus = (lead: Lead, newStatus: LeadStatus) => {
     onUpdateLead({
       ...lead,
@@ -143,7 +166,7 @@ export const Leads: React.FC<LeadsProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl font-bold text-slate-900">Lead Management</h1>
           <button 
-            onClick={onAddLead}
+            onClick={handleCreateNewLead}
             className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition-colors"
           >
             <Plus size={20} />
@@ -211,6 +234,13 @@ export const Leads: React.FC<LeadsProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEditLead(lead)}
+                      className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                      title="Edit lead"
+                    >
+                      <Edit size={16} />
+                    </button>
                     <div className={`w-3 h-3 rounded-full ${getPriorityColor(lead.priority)}`} title={`${lead.priority} priority`} />
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
                       {lead.status}
@@ -315,7 +345,7 @@ export const Leads: React.FC<LeadsProps> = ({
                 : 'Get started by creating your first lead.'}
             </p>
             <button 
-              onClick={onAddLead}
+              onClick={handleCreateNewLead}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium transition-colors"
             >
               Create New Lead
@@ -324,12 +354,27 @@ export const Leads: React.FC<LeadsProps> = ({
         )}
       </div>
 
+      <LeadModal
+        isOpen={leadModal.isOpen}
+        onClose={() => setLeadModal({ isOpen: false })}
+        onSave={handleSaveLead}
+        lead={leadModal.lead}
+      />
+
       <ContractModal
         isOpen={contractModal.isOpen}
         onClose={() => setContractModal({ isOpen: false })}
         onSave={handleSaveContract}
         contract={contractModal.contract}
-        leadInfo={contractModal.leadId ? leads.find(l => l.id === contractModal.leadId)?.customerInfo : undefined}
+        leadInfo={contractModal.leadId ? (() => {
+          const lead = leads.find(l => l.id === contractModal.leadId);
+          return lead ? {
+            customerName: lead.customerInfo.name,
+            customerAddress: lead.customerInfo.address,
+            customerPhone: lead.customerInfo.phone,
+            customerEmail: lead.customerInfo.email,
+          } : undefined;
+        })() : undefined}
       />
 
       {printContract && (

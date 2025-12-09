@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup-db": "node scripts/setup-database.js"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@supabase/supabase-js": "^2.87.0",
     "@types/react-signature-canvas": "^1.0.7",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.4",
